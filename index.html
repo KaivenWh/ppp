@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>我的 p5.js 项目</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body>
+  <h1>欢迎来到我的 p5.js 项目！</h1>
+  <script>
+    // 全局变量
+const PIXEL_SIZE = 10; // 像素块大小
+const WATER_LEVEL_MIN = 300; // 最低水位（降低海平面）
+const WATER_LEVEL_MAX = 500; // 最高水位
+const FROG_COUNT = 3; // 青蛙数量
+const TURTLE_COUNT = 2; // 乌龟数量
+const BIRD_COUNT = 5; // 小鸟数量
+const FISH_COUNT = 10; // 鱼群数量
+const TRASH_COUNT = 10; // 垃圾数量
+const ROCK_COUNT = 5; // 石头数量
+const TREE_COUNT = 5; // 树木数量
+
+let waveOffset = 0; // 水波动画偏移量
+let waterLevel = 400; // 水位高度（降低海平面）
+let weather = "sunny"; // 当前天气状态
+let fogAlpha = 0; // 雾天透明度
+let sunX = -100; // 太阳水平位置
+let sunY = 100; // 太阳垂直位置（往上移动）
+let sunSize = 50; // 太阳大小
+let skyColor; // 天空颜色
+let waterColor; // 水域颜色
+let treeColor; // 树木颜色
+let birdColor; // 小鸟颜色
+
+// 存储对象
+let ripples = []; // 涟漪
+let frogs = []; // 青蛙
+let turtles = []; // 乌龟
+let birds = []; // 小鸟
+let fishSchool = []; // 鱼群
+let raindrops = []; // 雨滴
+let snowflakes = []; // 雪花
+let lightnings = []; // 闪电
+let trashList = []; // 垃圾
+let rocks = []; // 石头
+let trees = []; // 树木
+let fruits = []; // 果实
+
+function setup() {
+  createCanvas(800, 600);
+  noStroke();
+  rectMode(CENTER);
+  ellipseMode(CENTER);
+
+  // 初始化颜色
+  skyColor = color(135, 206, 250); // 天空颜色
+  waterColor = color(0, 0, 255, 100); // 水域颜色
+  treeColor = color(34, 139, 34); // 树木颜色
+  birdColor = color(255, 223, 0); // 小鸟颜色
+
+  // 初始化对象
+  initializeObjects();
+}
+
+function draw() {
+  // 绘制背景
+  drawBackground();
+
+  // 绘制湿地水域
+  drawWater();
+
+  // 绘制生物
+  drawBirds();
+  drawFish();
+  drawFrogs();
+  drawTurtles();
+
+  // 绘制物体
+  drawTrash();
+  drawRocks();
+  drawTrees();
+  drawFruits();
+
+  // 绘制天气效果
+  drawRipples();
+  drawRaindrops();
+  drawSnowflakes();
+  drawLightnings();
+
+  // 绘制太阳（仅在晴天）
+  if (weather === "sunny") {
+    drawSun();
+  }
+
+  // 绘制雾天效果
+  if (weather === "foggy") {
+    drawFog();
+  }
+
+  // 更新动画
+  updateAnimations();
+}
+
+// 初始化对象
+function initializeObjects() {
+  // 初始化青蛙
+  for (let i = 0; i < FROG_COUNT; i++) {
+    frogs.push(new Frog(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, 450));
+  }
+
+  // 初始化乌龟
+  for (let i = 0; i < TURTLE_COUNT; i++) {
+    turtles.push(new Turtle(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, 470));
+  }
+
+  // 初始化小鸟
+  for (let i = 0; i < BIRD_COUNT; i++) {
+    birds.push(new Bird(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, int(random(100, 300))));
+  }
+
+  // 初始化鱼群
+  for (let i = 0; i < FISH_COUNT; i++) {
+    fishSchool.push(new Fish(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, int(random(waterLevel, height))));
+  }
+
+  // 初始化垃圾
+  for (let i = 0; i < TRASH_COUNT; i++) {
+    trashList.push(new Trash(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, int(random(waterLevel, height))));
+  }
+
+  // 初始化石头
+  for (let i = 0; i < ROCK_COUNT; i++) {
+    rocks.push(new Rock(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, int(random(waterLevel, height))));
+  }
+
+  // 初始化树木
+  for (let i = 0; i < TREE_COUNT; i++) {
+    trees.push(new Tree(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, int(random(waterLevel - 100, waterLevel))));
+  }
+}
+
+// 绘制背景
+function drawBackground() {
+  background(skyColor); // 天空颜色
+}
+
+// 绘制湿地水域
+function drawWater() {
+  fill(waterColor); // 水域颜色
+  for (let x = 0; x <= width; x += PIXEL_SIZE) {
+    let waveHeight = sin(radians(x + waveOffset)) * 10;
+    for (let y = waterLevel; y <= height; y += PIXEL_SIZE) {
+      if (y + waveHeight < height) {
+        rect(x, y, PIXEL_SIZE, PIXEL_SIZE); // 绘制像素块
+      }
+    }
+  }
+}
+
+// 绘制小鸟
+function drawBirds() {
+  for (let bird of birds) {
+    bird.display();
+    bird.update();
+  }
+}
+
+// 绘制鱼类
+function drawFish() {
+  for (let fish of fishSchool) {
+    fish.display();
+    fish.update();
+  }
+}
+
+// 绘制青蛙
+function drawFrogs() {
+  for (let frog of frogs) {
+    frog.display();
+    frog.update();
+  }
+}
+
+// 绘制乌龟
+function drawTurtles() {
+  for (let turtle of turtles) {
+    turtle.display();
+    turtle.update();
+  }
+}
+
+// 绘制树木
+function drawTrees() {
+  for (let tree of trees) {
+    tree.display();
+  }
+}
+
+// 绘制涟漪
+function drawRipples() {
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    let r = ripples[i];
+    r.display();
+    if (r.isFinished()) {
+      ripples.splice(i, 1); // 移除已完成的涟漪
+    }
+  }
+}
+
+// 绘制雨滴
+function drawRaindrops() {
+  if (weather === "rainy" || weather === "thunderstorm") {
+    for (let i = raindrops.length - 1; i >= 0; i--) {
+      let r = raindrops[i];
+      r.display();
+      r.update();
+      if (r.isFinished()) {
+        raindrops.splice(i, 1); // 移除已完成的雨滴
+      }
+    }
+  }
+}
+
+// 绘制雪花
+function drawSnowflakes() {
+  if (weather === "snowy") {
+    for (let i = snowflakes.length - 1; i >= 0; i--) {
+      let s = snowflakes[i];
+      s.display();
+      s.update();
+      if (s.isFinished()) {
+        snowflakes.splice(i, 1); // 移除已完成的雪花
+      }
+    }
+  }
+}
+
+// 绘制闪电
+function drawLightnings() {
+  if (weather === "thunderstorm") {
+    for (let i = lightnings.length - 1; i >= 0; i--) {
+      let l = lightnings[i];
+      l.display();
+      l.update();
+      if (l.isFinished()) {
+        lightnings.splice(i, 1); // 移除已完成的闪电
+      }
+    }
+  }
+}
+
+// 绘制垃圾
+function drawTrash() {
+  for (let trash of trashList) {
+    trash.display();
+  }
+}
+
+// 绘制石头
+function drawRocks() {
+  for (let rock of rocks) {
+    rock.display();
+  }
+}
+
+// 绘制果实
+function drawFruits() {
+  for (let fruit of fruits) {
+    fruit.display();
+    fruit.update();
+  }
+}
+
+// 绘制太阳（仅在晴天）
+function drawSun() {
+  // 太阳光晕
+  fill(255, 223, 0, 50);
+  for (let i = 0; i < 5; i++) {
+    ellipse(sunX, sunY, sunSize + i * 10, sunSize + i * 10);
+  }
+  // 太阳
+  fill(255, 223, 0);
+  ellipse(sunX, sunY, sunSize, sunSize);
+
+  // 太阳移动
+  sunX += 0.5;
+  if (sunX > width + 100) {
+    sunX = -100;
+  }
+
+  // 根据太阳位置调整天空颜色
+  if (sunX < width * 0.25) { // 日出
+    skyColor = lerpColor(color(255, 165, 0), color(135, 206, 250), map(sunX, -100, width * 0.25, 0, 1));
+  } else if (sunX > width * 0.75) { // 日落
+    skyColor = lerpColor(color(135, 206, 250), color(255, 69, 0), map(sunX, width * 0.75, width + 100, 0, 1));
+  } else { // 白天
+    skyColor = color(135, 206, 250);
+  }
+}
+
+// 绘制雾天效果
+function drawFog() {
+  fill(255, 255, 255, fogAlpha); // 雾天白色
+  rect(width / 2, height / 2, width, height); // 覆盖整个画面
+  fogAlpha = min(fogAlpha + 1, 100); // 雾天透明度逐渐增加
+}
+
+// 更新动画
+function updateAnimations() {
+  // 水波动画
+  waveOffset += 2;
+
+  // 更新涟漪
+  for (let r of ripples) {
+    r.update();
+  }
+
+  // 更新雨滴
+  if (weather === "rainy" || weather === "thunderstorm") {
+    if (frameCount % 5 === 0) { // 控制雨滴生成频率
+      raindrops.push(new Raindrop(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, -10));
+    }
+  }
+
+  // 更新雪花
+  if (weather === "snowy") {
+    if (frameCount % 10 === 0) { // 控制雪花生成频率
+      snowflakes.push(new Snowflake(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, -10));
+    }
+  }
+
+  // 更新闪电
+  if (weather === "thunderstorm") {
+    if (frameCount % 60 === 0) { // 控制闪电生成频率
+      lightnings.push(new Lightning(int(random(width / PIXEL_SIZE)) * PIXEL_SIZE, -10));
+    }
+  }
+
+  // 根据天气调整水位
+  if (weather === "rainy" || weather === "thunderstorm") {
+    waterLevel = min(waterLevel + 0.1, WATER_LEVEL_MAX); // 雨天水位上升
+  } else if (weather === "sunny") {
+    waterLevel = max(waterLevel - 0.1, WATER_LEVEL_MIN); // 晴天水位下降
+  }
+}
+
+// 鼠标点击事件
+function mousePressed() {
+  // 点击水面生成涟漪
+  if (mouseY > waterLevel) {
+    ripples.push(new Ripple(mouseX, mouseY));
+  }
+
+  // 点击天空切换天气
+  if (mouseY < waterLevel) {
+    const weatherOptions = ["sunny", "rainy", "cloudy", "snowy", "foggy", "thunderstorm"];
+    let currentIndex = weatherOptions.indexOf(weather);
+    weather = weatherOptions[(currentIndex + 1) % weatherOptions.length];
+    fogAlpha = 0; // 重置雾天透明度
+
+    // 根据天气调整颜色
+    updateColorsForWeather();
+  }
+
+  // 点击青蛙时，青蛙跳得更高
+  for (let frog of frogs) {
+    if (dist(mouseX, mouseY, frog.x, frog.y) < PIXEL_SIZE * 2) {
+      frog.jump();
+    }
+  }
+
+  // 点击垃圾时，清理垃圾
+  for (let i = trashList.length - 1; i >= 0; i--) {
+    let trash = trashList[i];
+    if (dist(mouseX, mouseY, trash.x, trash.y) < PIXEL_SIZE) {
+      trashList.splice(i, 1);
+    }
+  }
+}
+
+// 根据天气调整颜色
+function updateColorsForWeather() {
+  switch (weather) {
+    case "sunny":
+      skyColor = color(135, 206, 250); // 晴天蓝色
+      waterColor = color(0, 0, 255, 100); // 水域蓝色
+      treeColor = color(34, 139, 34); // 树木绿色
+      birdColor = color(255, 223, 0); // 小鸟黄色
+      break;
+    case "rainy":
+      skyColor = color(100, 100, 150); // 雨天灰色
+      waterColor = color(0, 0, 150, 150); // 水域深蓝色
+      treeColor = color(0, 100, 0); // 树木深绿色
+      birdColor = color(150, 150, 150); // 小鸟灰色
+      break;
+    case "cloudy":
+      skyColor = color(150, 150, 150); // 阴天灰色
+      waterColor = color(0, 0, 200, 100); // 水域蓝色
+      treeColor = color(50, 150, 50); // 树木绿色
+      birdColor = color(200, 200, 200); // 小鸟浅灰色
+      break;
+    case "snowy":
+      skyColor = color(200, 200, 255); // 雪天浅蓝色
+      waterColor = color(150, 150, 255, 100); // 水域浅蓝色
+      treeColor = color(255, 255, 255); // 树木白色
+      birdColor = color(255, 255, 255); // 小鸟白色
+      break;
+    case "foggy":
+      skyColor = color(150, 150, 150); // 雾天灰色
+      waterColor = color(100, 100, 150, 100); // 水域灰色
+      treeColor = color(100, 100, 100); // 树木灰色
+      birdColor = color(150, 150, 150); // 小鸟灰色
+      break;
+    case "thunderstorm":
+      skyColor = color(50, 50, 100); // 雷雨天深灰色
+      waterColor = color(0, 0, 100, 150); // 水域深蓝色
+      treeColor = color(0, 50, 0); // 树木深绿色
+      birdColor = color(100, 100, 100); // 小鸟灰色
+      break;
+  }
+}
+
+// 鼠标拖动事件
+function mouseDragged() {
+  // 拖动调节水位
+  if (mouseY > 500 && mouseY < 550) {
+    waterLevel = map(mouseX, 0, width, WATER_LEVEL_MIN, WATER_LEVEL_MAX);
+    waterLevel = constrain(waterLevel, WATER_LEVEL_MIN, WATER_LEVEL_MAX);
+  }
+}
+
+// 涟漪类
+class Ripple {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 0;
+    this.alpha = 255;
+  }
+
+  update() {
+    this.radius += 2; // 涟漪扩散
+    this.alpha -= 5; // 透明度减少
+  }
+
+  display() {
+    noFill();
+    stroke(0, 0, 255, this.alpha);
+    strokeWeight(2);
+    ellipse(this.x, this.y, this.radius * 2, this.radius * 2);
+  }
+
+  isFinished() {
+    return this.alpha <= 0; // 涟漪结束
+  }
+}
+
+// 青蛙类
+class Frog {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.jumpHeight = 0;
+  }
+
+  display() {
+    fill(0, 255, 0); // 青蛙绿色
+    rect(this.x, this.y - this.jumpHeight, PIXEL_SIZE * 2, PIXEL_SIZE * 2); // 身体
+    rect(this.x - PIXEL_SIZE, this.y - this.jumpHeight - PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE); // 左眼
+    rect(this.x + PIXEL_SIZE, this.y - this.jumpHeight - PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE); // 右眼
+
+    // 阴影
+    fill(0, 100, 0, 100);
+    rect(this.x + 2, this.y - this.jumpHeight + 2, PIXEL_SIZE * 2, PIXEL_SIZE * 2);
+  }
+
+  update() {
+    // 青蛙跳跃
+    this.jumpHeight = 10 * sin(radians(frameCount * 5)); // 正弦波模拟跳跃
+  }
+
+  jump() {
+    this.jumpHeight = 30; // 点击时跳得更高
+  }
+}
+
+// 乌龟类
+class Turtle {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.speed = random(0.5, 1.5);
+  }
+
+  display() {
+    fill(139, 69, 19); // 乌龟棕色
+    rect(this.x, this.y, PIXEL_SIZE * 4, PIXEL_SIZE * 2); // 龟壳
+    rect(this.x - PIXEL_SIZE * 2, this.y, PIXEL_SIZE, PIXEL_SIZE); // 头
+    rect(this.x + PIXEL_SIZE * 2, this.y, PIXEL_SIZE, PIXEL_SIZE); // 尾
+
+    // 阴影
+    fill(69, 34, 9, 100);
+    rect(this.x + 2, this.y + 2, PIXEL_SIZE * 4, PIXEL_SIZE * 2);
+  }
+
+  update() {
+    // 乌龟移动
+    this.x += this.speed;
+    if (this.x > width) {
+      this.x = -PIXEL_SIZE * 4; // 重置位置
+    }
+  }
+}
+
+// 小鸟类
+class Bird {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.speed = random(1, 2);
+  }
+
+  display() {
+    fill(birdColor); // 小鸟颜色
+    rect(this.x, this.y, PIXEL_SIZE, PIXEL_SIZE / 2); // 身体
+    rect(this.x - PIXEL_SIZE / 2, this.y - PIXEL_SIZE / 2, PIXEL_SIZE / 2, PIXEL_SIZE / 2); // 左翅膀
+    rect(this.x + PIXEL_SIZE / 2, this.y - PIXEL_SIZE / 2, PIXEL_SIZE / 2, PIXEL_SIZE / 2); // 右翅膀
+
+    // 阴影
+    fill(red(birdColor) * 0.8, green(birdColor) * 0.8, blue(birdColor) * 0.8, 100);
+    rect(this.x + 1, this.y + 1, PIXEL_SIZE, PIXEL_SIZE / 2);
+  }
+
+  update() {
+    // 小鸟移动
+    this.x += this.speed;
+    if (this.x > width) {
+      this.x = -PIXEL_SIZE; // 重置位置
+    }
+  }
+}
+
+// 鱼类
+class Fish {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.speed = random(1, 2);
+  }
+
+  display() {
+    fill(255, 165, 0); // 鱼类橙色
+    rect(this.x, this.y, PIXEL_SIZE * 3, PIXEL_SIZE * 1.5); // 鱼类身体
+    triangle(this.x - PIXEL_SIZE * 1.5, this.y, this.x - PIXEL_SIZE * 2.5, this.y - 5, this.x - PIXEL_SIZE * 2.5, this.y + 5); // 鱼尾
+
+    // 阴影
+    fill(200, 100, 0, 100);
+    rect(this.x + 2, this.y + 2, PIXEL_SIZE * 3, PIXEL_SIZE * 1.5);
+  }
+
+  update() {
+    // 鱼类移动
+    this.x += this.speed;
+    if (this.x > width) {
+      this.x = -PIXEL_SIZE * 3; // 重置位置
+    }
+
+    // 鱼类躲避鼠标
+    if (dist(mouseX, mouseY, this.x, this.y) < 50) {
+      this.x -= this.speed * 2;
+    }
+  }
+}
+
+// 雨滴类
+class Raindrop {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.speed = random(5, 10);
+  }
+
+  display() {
+    fill(0, 0, 255); // 雨滴蓝色
+    rect(this.x, this.y, PIXEL_SIZE / 2, PIXEL_SIZE); // 雨滴形状
+  }
+
+  update() {
+    // 雨滴下落
+    this.y += this.speed;
+  }
+
+  isFinished() {
+    return this.y > height; // 雨滴落地
+  }
+}
+
+// 雪花类
+class Snowflake {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.speed = random(2, 5);
+  }
+
+  display() {
+    fill(255); // 雪花白色
+    rect(this.x, this.y, PIXEL_SIZE / 2, PIXEL_SIZE / 2); // 雪花形状
+  }
+
+  update() {
+    // 雪花下落
+    this.y += this.speed;
+  }
+
+  isFinished() {
+    return this.y > height; // 雪花落地
+  }
+}
+
+// 闪电类
+class Lightning {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.alpha = 255;
+  }
+
+  display() {
+    stroke(255, 255, 0, this.alpha); // 闪电黄色
+    strokeWeight(2);
+    line(this.x, this.y, this.x + random(-10, 10), this.y + random(20, 40));
+  }
+
+  update() {
+    this.alpha -= 10; // 闪电消失
+  }
+
+  isFinished() {
+    return this.alpha <= 0; // 闪电结束
+  }
+}
+
+// 垃圾类
+class Trash {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  display() {
+    fill(100); // 垃圾灰色
+    rect(this.x, this.y, PIXEL_SIZE, PIXEL_SIZE); // 垃圾形状
+
+    // 阴影
+    fill(50, 50, 50, 100);
+    rect(this.x + 1, this.y + 1, PIXEL_SIZE, PIXEL_SIZE);
+  }
+}
+
+// 石头类
+class Rock {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  display() {
+    fill(100); // 石头灰色
+    rect(this.x, this.y, PIXEL_SIZE * 2, PIXEL_SIZE); // 石头形状
+
+    // 阴影
+    fill(50, 50, 50, 100);
+    rect(this.x + 2, this.y + 2, PIXEL_SIZE * 2, PIXEL_SIZE);
+  }
+}
+
+// 树木类
+class Tree {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  display() {
+    fill(treeColor); // 树木颜色
+    rect(this.x, this.y, PIXEL_SIZE, PIXEL_SIZE * 3); // 树干
+    rect(this.x, this.y - PIXEL_SIZE * 2, PIXEL_SIZE * 3, PIXEL_SIZE * 2); // 树冠
+
+    // 阴影
+    fill(red(treeColor) * 0.8, green(treeColor) * 0.8, blue(treeColor) * 0.8, 100);
+    rect(this.x + 2, this.y + 2, PIXEL_SIZE, PIXEL_SIZE * 3);
+    rect(this.x + 2, this.y - PIXEL_SIZE * 2 + 2, PIXEL_SIZE * 3, PIXEL_SIZE * 2);
+  }
+}
+
+// 果实类
+class Fruit {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.speed = random(2, 5);
+  }
+
+  display() {
+    fill(255, 0, 0); // 果实红色
+    rect(this.x, this.y, PIXEL_SIZE, PIXEL_SIZE); // 果实形状
+
+    // 阴影
+    fill(150, 0, 0, 100);
+    rect(this.x + 1, this.y + 1, PIXEL_SIZE, PIXEL_SIZE);
+  }
+
+  update() {
+    // 果实下落
+    this.y += this.speed;
+  }
+}
+  </script>
+</body>
+</html>
