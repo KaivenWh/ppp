@@ -1,0 +1,158 @@
+// 全局变量
+const PIXEL_SIZE = 10; // 像素块大小
+const WATER_LEVEL_MIN = 300; // 最低水位（降低海平面）
+const WATER_LEVEL_MAX = 500; // 最高水位
+const FROG_COUNT = 3; // 青蛙数量
+const TURTLE_COUNT = 2; // 乌龟数量
+const BIRD_COUNT = 5; // 小鸟数量
+const FISH_COUNT = 10; // 鱼群数量
+const TRASH_COUNT = 10; // 垃圾数量
+const ROCK_COUNT = 5; // 石头数量
+const TREE_COUNT = 5; // 树木数量
+
+let waveOffset = 0; // 水波动画偏移量
+let waterLevel = 400; // 水位高度（降低海平面）
+let weather = "sunny"; // 当前天气状态
+let fogAlpha = 0; // 雾天透明度
+let sunX = -100; // 太阳水平位置
+let sunY = 100; // 太阳垂直位置（往上移动）
+let sunSize = 50; // 太阳大小
+let skyColor; // 天空颜色
+let waterColor; // 水域颜色
+let treeColor; // 树木颜色
+let birdColor; // 小鸟颜色
+
+// 存储对象
+let ripples = []; // 涟漪
+let frogs = []; // 青蛙
+let turtles = []; // 乌龟
+let birds = []; // 小鸟
+let fishSchool = []; // 鱼群
+let raindrops = []; // 雨滴
+let snowflakes = []; // 雪花
+let lightnings = []; // 闪电
+let trashList = []; // 垃圾
+let rocks = []; // 石头
+let trees = []; // 树木
+let fruits = []; // 果实
+
+function setup() {
+  createCanvas(windowWidth, windowHeight); // 画布大小适应屏幕
+  noStroke();
+  rectMode(CENTER);
+  ellipseMode(CENTER);
+
+  // 初始化颜色
+  skyColor = color(135, 206, 250); // 天空颜色
+  waterColor = color(0, 0, 255, 100); // 水域颜色
+  treeColor = color(34, 139, 34); // 树木颜色
+  birdColor = color(255, 223, 0); // 小鸟颜色
+
+  // 初始化对象
+  initializeObjects();
+
+  // 启用触摸事件
+  canvas.ontouchstart = (e) => e.preventDefault(); // 阻止默认触摸行为
+  canvas.ontouchmove = (e) => e.preventDefault(); // 阻止默认触摸行为
+}
+
+function draw() {
+  // 绘制背景
+  drawBackground();
+
+  // 绘制湿地水域
+  drawWater();
+
+  // 绘制生物
+  drawBirds();
+  drawFish();
+  drawFrogs();
+  drawTurtles();
+
+  // 绘制物体
+  drawTrash();
+  drawRocks();
+  drawTrees();
+  drawFruits();
+
+  // 绘制天气效果
+  drawRipples();
+  drawRaindrops();
+  drawSnowflakes();
+  drawLightnings();
+
+  // 绘制太阳（仅在晴天）
+  if (weather === "sunny") {
+    drawSun();
+  }
+
+  // 绘制雾天效果
+  if (weather === "foggy") {
+    drawFog();
+  }
+
+  // 更新动画
+  updateAnimations();
+}
+
+// 触摸开始事件（相当于鼠标点击）
+function touchStarted() {
+  // 获取触摸点的坐标
+  let touchX = touches[0].x;
+  let touchY = touches[0].y;
+
+  // 点击水面生成涟漪
+  if (touchY > waterLevel) {
+    ripples.push(new Ripple(touchX, touchY));
+  }
+
+  // 点击天空切换天气
+  if (touchY < waterLevel) {
+    const weatherOptions = ["sunny", "rainy", "cloudy", "snowy", "foggy", "thunderstorm"];
+    let currentIndex = weatherOptions.indexOf(weather);
+    weather = weatherOptions[(currentIndex + 1) % weatherOptions.length];
+    fogAlpha = 0; // 重置雾天透明度
+
+    // 根据天气调整颜色
+    updateColorsForWeather();
+  }
+
+  // 点击青蛙时，青蛙跳得更高
+  for (let frog of frogs) {
+    if (dist(touchX, touchY, frog.x, frog.y) < PIXEL_SIZE * 2) {
+      frog.jump();
+    }
+  }
+
+  // 点击垃圾时，清理垃圾
+  for (let i = trashList.length - 1; i >= 0; i--) {
+    let trash = trashList[i];
+    if (dist(touchX, touchY, trash.x, trash.y) < PIXEL_SIZE) {
+      trashList.splice(i, 1);
+    }
+  }
+
+  // 阻止默认的触摸行为（如页面滚动）
+  return false;
+}
+
+// 触摸移动事件（相当于鼠标拖动）
+function touchMoved() {
+  // 获取触摸点的坐标
+  let touchX = touches[0].x;
+  let touchY = touches[0].y;
+
+  // 拖动调节水位
+  if (touchY > 500 && touchY < 550) {
+    waterLevel = map(touchX, 0, width, WATER_LEVEL_MIN, WATER_LEVEL_MAX);
+    waterLevel = constrain(waterLevel, WATER_LEVEL_MIN, WATER_LEVEL_MAX);
+  }
+
+  // 阻止默认的触摸行为（如页面滚动）
+  return false;
+}
+
+// 窗口大小变化时调整画布
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight); // 调整画布大小以适应窗口
+}
